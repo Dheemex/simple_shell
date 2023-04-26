@@ -1,44 +1,120 @@
 #include "shell.h"
+/**
+ * main - this initialize the variables of the program
+ * @argc: shows num of values received from command line
+ * @argv: shows values received from command line
+ * @env: shows num of values received from command line
+ * Return: zero or success.
+ */
+int main(int argc, char *argv[], char *env[])
+{
+	data_of_program data_struct = {NULL}, *data = &data_struct;
+	char *prompt = "";
+
+	inicialize_data(data, argc, argv, env);
+
+	signal(SIGINT, handle_ctrl_c);
+
+	if (isatty(STDIN_FILENO) && isatty(STDOUT_FILENO) && argc == 1)
+	{/* It is in the terminal, interactive mode */
+		errno = 2;/*???????*/
+		prompt = PROMPT_MSG;
+	}
+	errno = 0;
+	sisifo(prompt, data);
+	return (0);
+}
 
 /**
- * main - this shows the entry point
- * @ac: this shows the arg count
- * @av: this shows the arg vector
- *
- * Return: 0 on success, 1 on error
+ * handle_ctrl_c - this allow to print the prompt in a new line
+ * when the signal SIGINT (ctrl + c) is send to the program
+ * @UNUSED: this is the option of the prototype
  */
-int main(int ac, char **av)
+void handle_ctrl_c(int opr UNUSED)
 {
-	info_t info[] = { INFO_INIT };
-	int fd = 2;
+	_print("\n");
+	_print(PROMPT_MSG);
+}
 
-	asm ("mov %1, %0\n\t"
-			"add $3, %0"
-			: "=r" (fd)
-			: "r" (fd));
+/**
+ * inicialize_data - this inicialize struct with info of  program
+ * @data: pointer to the structure of data
+ * @argv: shows array of arguments passed to program execution
+ * @env: this is the environ passed to program execution
+ * @argc: this is the num of values received from command line
+ */
+void inicialize_data(data_of_program *data, int argc, char *argv[], char **env)
+{
+	int i = 0;
 
-	if (ac == 2)
+	data->program_name = argv[0];
+	data->input_line = NULL;
+	data->command_name = NULL;
+	data->exec_counter = 0;
+	/* this defines file descriptor to be readed*/
+	if (argc == 1)
+		data->file_descriptor = STDIN_FILENO;
+	else
 	{
-		fd = open(av[1], O_RDONLY);
-		if (fd == -1)
+		data->file_descriptor = open(argv[1], O_RDONLY);
+		if (data->file_descriptor == -1)
 		{
-			if (errno == EACCES)
-				exit(126);
-			if (errno == ENOENT)
-			{
-				_eputs(av[0]);
-				_eputs(": 0: Can't open ");
-				_eputs(av[1]);
-				_eputchar('\n');
-				_eputchar(BUF_FLUSH);
-				exit(127);
-			}
-			return (EXIT_FAILURE);
+			_printe(data->program_name);
+			_printe(": 0: Can't open ");
+			_printe(argv[1]);
+			_printe("\n");
+			exit(127);
 		}
-		info->readfd = fd;
 	}
-	populate_env_list(info);
-	read_history(info);
-	hsh(info, av);
-	return (EXIT_SUCCESS);
+	data->tokens = NULL;
+	data->env = malloc(sizeof(char *) * 50);
+	if (env)
+	{
+		for (; env[i]; i++)
+		{
+			data->env[i] = str_duplicate(env[i]);
+		}
+	}
+	data->env[i] = NULL;
+	env = data->env;
+
+	data->alias_list = malloc(sizeof(char *) * 20);
+	for (i = 0; i < 20; i++)
+	{
+		data->alias_list[i] = NULL;
+	}
+}
+/**
+ * sisifo - this is an infinite loop which shows the prompt
+ * @prompt: this is the prompt to be printed
+ * @data: it shows a infinite loop which shows the prompt
+ */
+void sisifo(char *prompt, data_of_program *data)
+{
+	int error_code = 0, string_len = 0;
+
+	while (++(data->exec_counter))
+	{
+		_print(prompt);
+		error_code = string_len = _getline(data);
+
+		if (error_code == EOF)
+		{
+			free_all_data(data);
+			exit(errno); /* if EOF is first Char of string, exit*/
+		}
+		if (string_len >= 1)
+		{
+			expand_alias(data);
+			expand_variables(data);
+			tokenize(data);
+			if (data->tokens[0])
+			{ /* if text is allowed to prompt, execute */
+				error_code = execute(data);
+				if (error_code != 0)
+					_print_error(error_code, data);
+			}
+			free_recurrent_data(data);
+		}
+	}
 }
