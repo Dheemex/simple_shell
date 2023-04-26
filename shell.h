@@ -162,10 +162,10 @@ int _unsetenv(info_t *, char *);
 /* toem_getinfo.c */
 void clear_info(info_t *);
 void free_info(info_t *, int);
-void set_info(info_t *, char *);
+void set_info(info_t *, char **);
 
 /*toem_getline.c */
-int _getline(info_t *, char *, size_t *);
+int _getline(info_t *, char **, size_t *);
 ssize_t get_input(info_t *);
 void sigintHandler(int);
 
@@ -178,8 +178,8 @@ int write_history(info_t *info);
 
 /* toem_lists.c */
 int delete_node_at_index(list_t **, unsigned int);
-list_t add_node_end(list_t *, const char *, int);
-list_t add_node(list_t *, const char *, int);
+list_t *add_node_end(list_t **, const char *, int);
+list_t *add_node(list_t **, const char *, int);
 size_t print_list_str(const list_t *);
 void free_list(list_t **);
 
