@@ -80,7 +80,6 @@ int check_logic_ops(char *array_commands[], int i, char array_operators[])
 		}
 		if (array_commands[i][j] == '|' && array_commands[i][j + 1] == '|')
 		{
-			
 			temp = array_commands[i];
 			array_commands[i][j] = '\0';
 			array_commands[i] = str_duplicate(array_commands[i]);

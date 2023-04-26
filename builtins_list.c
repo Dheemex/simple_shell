@@ -1,7 +1,7 @@
 #include "shell.h"
 
 /**
- * builtins_list - this function search for match and execute the associate builtin
+ * builtins_list - this function search for match and execut.
  * @data: struct for the program's data
  * Return: Returns the return of the function executed is there is a match,
  * otherwise returns -1.
